@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnScroll — Anti-Doomscroll & Mindful Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#0b0f17',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080c14;
+            color: #f1f5f9;
+        }
+
+        /* Glassmorphism Design Tokens */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-modal {
+            background: rgba(11, 15, 23, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .neon-glow-emerald {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+        }
+
+        .neon-glow-indigo {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Custom Scrollbars */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.6);
+        }
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Breathing Circle Pulse Keyframes */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+            50% { transform: scale(1.45); opacity: 1; box-shadow: 0 0 50px rgba(16, 185, 129, 0.6); }
+        }
+
+        .animate-breathe {
+            animation: breathe 8s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-300">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 px-4 lg:px-8 py-3 transition-all">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <!-- App Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-indigo-600 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-emerald-500/20">
+                    U
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight text-slate-100 flex items-center gap-2">
+                        UnScroll <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Free & Open</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400">Mindful Planner & Anti-Doomscroll Engine</p>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <nav class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1 scrollbar-none max-w-full">
+                <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                    <i class="fas fa-scroll"></i> <span>Simulator</span>
+                </button>
+                <button onclick="switchTab('journal')" id="tab-journal" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:bg-slate-800/50 whitespace-nowrap">
+                    <i class="fas fa-book-open"></i> <span>Notes</span>
+                </button>
+                <button onclick="switchTab('calendar')" id="tab-calendar" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:bg-slate-800/50 whitespace-nowrap">
+                    <i class="fas fa-calendar-alt"></i> <span>Schedule</span>
+                </button>
+                <button onclick="switchTab('breathing')" id="tab-breathing" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:bg-slate-800/50 whitespace-nowrap">
+                    <i class="fas fa-wind"></i> <span>Pause</span>
+                </button>
+                <button onclick="switchTab('habits')" id="tab-habits" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:bg-slate-800/50 whitespace-nowrap">
+                    <i class="fas fa-chart-line"></i> <span>Habits</span>
+                </button>
+                <button onclick="switchTab('ambient')" id="tab-ambient" class="tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:bg-slate-800/50 whitespace-nowrap">
+                    <i class="fas fa-headphones"></i> <span>Focus Audio</span>
+                </button>
+            </nav>
+
+            <!-- Free Publish Banner Trigger -->
+            <button onclick="openPublishModal()" class="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition transform hover:scale-105">
+                <i class="fas fa-rocket"></i> Publish 100% Free
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Workspace -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full flex-1">
+
+        <!-- 1. Scroll Resistance Simulator -->
+        <div id="view-simulator" class="view-panel space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Simulator Controls & Real-Time Stats -->
+                <div class="glass-card p-6 rounded-3xl space-y-6">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-tachometer-alt text-emerald-400"></i> Scroll Resistance Trainer
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Practice mindful scroll awareness with simulated friction and real-time intervention prompts.</p>
+                    </div>
+
+                    <!-- Scroll Resistance Gauge -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400 font-semibold">Scroll Speed Meter</span>
+                            <span id="scrollSpeedDisplay" class="font-bold text-emerald-400">0 px/s</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div id="scrollSpeedBar" class="bg-gradient-to-r from-emerald-400 to-red-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Scroll Distance</span>
+                            <div id="scrollDistance" class="text-lg font-black text-slate-100 mt-0.5">0 m</div>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Mindful Pauses</span>
+                            <div id="mindfulBreaksCount" class="text-lg font-black text-indigo-400 mt-0.5">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Sensitivity Controls -->
+                    <div class="space-y-3 pt-2 border-t border-slate-800">
+                        <label class="text-xs font-semibold text-slate-300 flex justify-between">
+                            <span>Intervention Sensitivity</span>
+                            <span id="sensitivityVal" class="text-emerald-400">Medium</span>
+                        </label>
+                        <input type="range" id="sensitivitySlider" min="1" max="3" value="2" class="w-full accent-emerald-500 cursor-pointer">
+                        <p class="text-[11px] text-slate-500">Higher sensitivity triggers mindful intervention modals faster when rapid scrolling is detected.</p>
+                    </div>
+
+                    <button onclick="resetSimulator()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">
+                        Reset Session Stats
+                    </button>
+                </div>
+
+                <!-- Interactive Simulated Feed -->
+                <div class="glass-card p-4 rounded-3xl lg:col-span-2 flex flex-col h-[600px] relative overflow-hidden">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-800 px-2">
+                        <span class="text-xs font-bold text-slate-400 flex items-center gap-2">
+                            <i class="fas fa-mobile-alt text-emerald-400"></i> Practice Feed
+                        </span>
+                        <span class="text-[11px] text-slate-500">Scroll down to test friction response</span>
+                    </div>
+
+                    <!-- Scroll Container -->
+                    <div id="feedContainer" onscroll="handleFeedScroll()" class="flex-1 overflow-y-auto space-y-4 py-4 px-2 custom-scrollbar relative">
+                        <!-- Dynamic Simulated Feed Items -->
+                    </div>
+
+                    <!-- Friction Alert Banner Overlay -->
+                    <div id="frictionOverlay" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-2xl animate-bounce">
+                            <i class="fas fa-pause"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100">Mindful Reality Check</h3>
+                        <p class="text-xs text-slate-300 max-w-sm leading-relaxed">
+                            You're scrolling at high speed. Ask yourself: <em>"Am I looking for something specific, or am I running from boredom?"</em>
+                        </p>
+                        <div class="flex gap-3 pt-2">
+                            <button onclick="resumeScrolling()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition">
+                                I am Conscious (Continue)
+                            </button>
+                            <button onclick="switchTab('breathing'); resumeScrolling();" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs transition">
+                                Take a 1-Min Pause
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Mindful Notes & Journaling View -->
+        <div id="view-journal" class="view-panel hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left Sidebar: Note List -->
+                <div class="glass-card p-5 rounded-3xl flex flex-col h-[650px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-extrabold flex items-center gap-2 text-slate-100">
+                            <i class="fas fa-journal-whills text-emerald-400"></i> Journal Notes
+                        </h2>
+                        <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow-md shadow-emerald-500/20">
+                            <i class="fas fa-plus"></i> New Note
+                        </button>
+                    </div>
+                    
+                    <input type="text" id="noteSearch" oninput="renderNotesList()" placeholder="Search notes or #tags..." class="w-full bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 mb-3">
+                    
+                    <div class="flex gap-1.5 mb-3 overflow-x-auto pb-1 text-xs scrollbar-none">
+                        <button onclick="filterNotesTag('ALL')" class="tag-filter-btn active px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap text-[11px] font-semibold">All</button>
+                        <button onclick="filterNotesTag('#Reflection')" class="tag-filter-btn px-3 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 whitespace-nowrap text-[11px]">#Reflection</button>
+                        <button onclick="filterNotesTag('#Triggers')" class="tag-filter-btn px-3 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 whitespace-nowrap text-[11px]">#Triggers</button>
+                        <button onclick="filterNotesTag('#Ideas')" class="tag-filter-btn px-3 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 whitespace-nowrap text-[11px]">#Ideas</button>
+                    </div>
+
+                    <div id="notesContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+                        <!-- Dynamically loaded notes -->
+                    </div>
+                </div>
+
+                <!-- Right Workspace: Active Note Editor -->
+                <div class="glass-card p-6 rounded-3xl lg:col-span-2 flex flex-col h-[650px] relative">
+                    <div id="noNoteSelectedView" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-500 bg-slate-950/80 backdrop-blur-md z-10 rounded-3xl">
+                        <i class="fas fa-edit text-4xl mb-3 text-slate-600"></i>
+                        <p class="text-sm font-medium">Select a note or click "New Note" to start writing.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                        <input type="text" id="noteTitle" oninput="autoSaveCurrentNote()" placeholder="Note Title..." class="bg-transparent text-xl font-bold text-slate-100 placeholder-slate-600 focus:outline-none flex-1 min-w-[200px]">
+                        <div class="flex items-center gap-2">
+                            <button id="pinNoteBtn" onclick="togglePinCurrentNote()" title="Pin Note" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 transition">
+                                <i class="fas fa-thumbtack"></i>
+                            </button>
+                            <button onclick="downloadCurrentNote()" title="Export Text" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button onclick="deleteCurrentNote()" title="Delete Note" class="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tags & Prompts Bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-slate-800/60 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-500 font-medium">Tags:</span>
+                            <div id="activeNoteTags" class="flex flex-wrap gap-1"></div>
+                            <button onclick="promptAddTag()" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-[11px]">+ Add Tag</button>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-slate-500 text-[11px]">Insert Prompt:</span>
+                            <button onclick="insertPrompt('Why did I feel the urge to scroll right now? ')" class="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] text-emerald-400 hover:border-emerald-500/40">Urge Trigger</button>
+                            <button onclick="insertPrompt('What is the single most productive thing I can do right now? ')" class="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] text-indigo-400 hover:border-indigo-500/40">Focus Intent</button>
+                        </div>
+                    </div>
+
+                    <textarea id="noteBody" oninput="autoSaveCurrentNote()" placeholder="Write down what triggered your urge to scroll, daily reflections, or study goals..." class="w-full flex-1 bg-slate-900/40 rounded-2xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none resize-none font-sans leading-relaxed text-sm border border-slate-800/80 focus:border-emerald-500/50 mt-3 custom-scrollbar"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Anti-Procrastination Calendar & Schedule -->
+        <div id="view-calendar" class="view-panel hidden space-y-6">
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-emerald-500">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Screen Time Cap</div>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <span id="screenTimeGoalDisplay" class="text-2xl font-black text-slate-100">60m</span>
+                        <span class="text-xs text-slate-400">daily target</span>
+                    </div>
+                    <button onclick="setScreenTimeGoalPrompt()" class="mt-2 text-[11px] text-emerald-400 hover:underline">Adjust Limit</button>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-indigo-500">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Mindful Streak</div>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="currentStreakDisplay" class="text-2xl font-black text-indigo-400">5 Days</span>
+                        <i class="fas fa-fire text-amber-500 animate-pulse"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-2">Consistent phone break streak</p>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-purple-500">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Focus Planned</div>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <span id="scheduledFocusDisplay" class="text-2xl font-black text-slate-100">2.5 hrs</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-2">Selected day focus time</p>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-amber-500">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Focus Score</div>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <span class="text-2xl font-black text-amber-400">92%</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-2">Based on completed goals</p>
+                </div>
+            </div>
+
+            <!-- Main Calendar Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Interactive Calendar Grid -->
+                <div class="glass-card p-6 rounded-3xl lg:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-calendar-alt text-emerald-400"></i>
+                            <span id="calendarMonthYear">Month Year</span>
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeMonth(-1)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button onclick="resetToToday()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">
+                                Today
+                            </button>
+                            <button onclick="changeMonth(1)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-slate-400 mb-2">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+                        <!-- Dynamic Calendar Cells -->
+                    </div>
+                </div>
+
+                <!-- Schedule & Focus Blocks Sidebar -->
+                <div class="glass-card p-6 rounded-3xl flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                            <div>
+                                <h3 id="selectedDateTitle" class="font-bold text-slate-100 text-base">Selected Date</h3>
+                                <p class="text-[11px] text-slate-400">Deep Work Schedule & Offline Time</p>
+                            </div>
+                            <button onclick="toggleAddBlockForm(true)" class="px-3 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs transition flex items-center gap-1 shadow-md shadow-indigo-500/20">
+                                <i class="fas fa-plus"></i> Block
+                            </button>
+                        </div>
+
+                        <!-- Scheduled Focus Blocks List -->
+                        <div class="space-y-3 mb-6">
+                            <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Scheduled Focus Blocks</h4>
+                            <div id="scheduledBlocksList" class="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                                <!-- Dynamic Blocks -->
+                            </div>
+                        </div>
+
+                        <!-- Daily Habits Checklist for Selected Date -->
+                        <div class="space-y-3">
+                            <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mindful Habit Logs</h4>
+                            <div id="selectedDateHabits" class="space-y-2">
+                                <!-- Dynamic Date Habits -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Focus Block Form -->
+                    <div id="addBlockForm" class="hidden pt-4 border-t border-slate-800 space-y-2.5">
+                        <input type="text" id="blockTitleInput" placeholder="Block Title (e.g. Study Session)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <div class="flex gap-2">
+                            <input type="time" id="blockStartTime" class="w-1/2 bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-200">
+                            <input type="time" id="blockEndTime" class="w-1/2 bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-200">
+                        </div>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="saveFocusBlock()" class="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition">Save Block</button>
+                            <button onclick="toggleAddBlockForm(false)" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs transition">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Mindful Breathing / Pause View -->
+        <div id="view-breathing" class="view-panel hidden space-y-6">
+            <div class="glass-card p-8 rounded-3xl max-w-2xl mx-auto text-center space-y-8">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-100 flex items-center justify-center gap-2">
+                        <i class="fas fa-wind text-emerald-400"></i> Mindful Breathing
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Inhale calm, exhale the urge to endlessly scroll.</p>
+                </div>
+
+                <div class="relative py-12 flex items-center justify-center">
+                    <div class="w-48 h-48 rounded-full bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center animate-breathe">
+                        <div class="w-32 h-32 rounded-full bg-emerald-500/30 border border-emerald-400/50 flex items-center justify-center backdrop-blur-sm">
+                            <span id="breathingText" class="text-sm font-extrabold text-emerald-300">Breathe In</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="breathingTimer" class="text-4xl font-black text-slate-100">01:00</div>
+                    <div class="flex justify-center gap-3">
+                        <button onclick="startBreathingSession()" id="startBreathingBtn" class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20">
+                            Start 1-Min Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Habits Dashboard -->
+        <div id="view-habits" class="view-panel hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card p-6 rounded-3xl space-y-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Estimated Time Saved</span>
+                    <div class="text-3xl font-black text-emerald-400">14.2 Hours</div>
+                    <p class="text-[11px] text-slate-500">Calculated over the last 30 days</p>
+                </div>
+                <div class="glass-card p-6 rounded-3xl space-y-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Doomscroll Interrupts</span>
+                    <div class="text-3xl font-black text-indigo-400">48 Times</div>
+                    <p class="text-[11px] text-slate-500">Successful friction triggers</p>
+                </div>
+                <div class="glass-card p-6 rounded-3xl space-y-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Dopamine Reset Index</span>
+                    <div class="text-3xl font-black text-purple-400">88 / 100</div>
+                    <p class="text-[11px] text-slate-500">Based on focus block adherence</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-3xl">
+                <h3 class="text-lg font-bold text-slate-100 mb-4">Core Habit Consistency</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span>No Phone First 30 Mins of Day</span>
+                            <span class="text-emerald-400">85%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full w-[85%]"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span>Read 20 Pages Daily</span>
+                            <span class="text-indigo-400">70%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-indigo-500 h-full w-[70%]"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span>Evening Phone Shutdown at 10 PM</span>
+                            <span class="text-purple-400">92%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-purple-500 h-full w-[92%]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Ambient Sound & Focus Timer View -->
+        <div id="view-ambient" class="view-panel hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Rain Sound Generator -->
+                <div class="glass-card p-6 rounded-3xl space-y-4 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center text-xl">
+                        <i class="fas fa-cloud-showers-heavy"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-100">Ambient Rain</h3>
+                        <p class="text-[11px] text-slate-400">Deep brown noise synthesized sound</p>
+                    </div>
+                    <button onclick="toggleAmbientSound('rain')" id="btn-sound-rain" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">
+                        Play Rain
+                    </button>
+                </div>
+
+                <!-- Ocean Waves Sound Generator -->
+                <div class="glass-card p-6 rounded-3xl space-y-4 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-xl">
+                        <i class="fas fa-water"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-100">Ocean Waves</h3>
+                        <p class="text-[11px] text-slate-400">Rhythmic white noise oscillation</p>
+                    </div>
+                    <button onclick="toggleAmbientSound('ocean')" id="btn-sound-ocean" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">
+                        Play Ocean
+                    </button>
+                </div>
+
+                <!-- White Noise Generator -->
+                <div class="glass-card p-6 rounded-3xl space-y-4 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 mx-auto flex items-center justify-center text-xl">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-100">Focus Static</h3>
+                        <p class="text-[11px] text-slate-400">Pure white noise frequency block</p>
+                    </div>
+                    <button onclick="toggleAmbientSound('whitenoise')" id="btn-sound-whitenoise" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">
+                        Play Static
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Step-by-Step Free Publishing & PWA Guide -->
+    <div id="publishModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-modal max-w-2xl w-full rounded-3xl p-6 lg:p-8 space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-xl">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-100">How to Publish 100% Free</h3>
+                        <p class="text-xs text-slate-400">Host under your own custom name without paying a single cent</p>
+                    </div>
+                </div>
+                <button onclick="closePublishModal()" class="text-slate-400 hover:text-slate-100 text-lg p-2">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Steps Section -->
+            <div class="space-y-6 text-xs leading-relaxed text-slate-300">
+                
+                <!-- Option 1: Vercel or Netlify -->
+                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                    <h4 class="font-extrabold text-slate-100 text-sm text-emerald-400 flex items-center gap-2">
+                        <i class="fas fa-globe"></i> Option 1: Host on Vercel or Netlify (Easiest)
+                    </h4>
+                    <ol class="list-decimal list-inside space-y-1.5 text-slate-300">
+                        <li>Save this file as <code class="bg-slate-950 px-1.5 py-0.5 rounded text-emerald-300">index.html</code> on your computer.</li>
+                        <li>Create a free account on <strong class="text-slate-100">GitHub.com</strong> and create a repository named <code class="bg-slate-950 px-1.5 py-0.5 rounded text-slate-200">unscroll-app</code>.</li>
+                        <li>Upload your <code class="bg-slate-950 px-1.5 py-0.5 rounded text-slate-200">index.html</code> file to the repository.</li>
+                        <li>Go to <strong class="text-slate-100">Vercel.com</strong> or <strong class="text-slate-100">Netlify.com</strong>, log in with GitHub, and select "Import Repository".</li>
+                        <li>Click **Deploy**! In 10 seconds, your app will be live at a custom URL like <code class="bg-slate-950 px-1.5 py-0.5 rounded text-emerald-400">yourname-unscroll.vercel.app</code> for 100% free forever.</li>
+                    </ol>
+                </div>
+
+                <!-- Option 2: GitHub Pages -->
+                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                    <h4 class="font-extrabold text-slate-100 text-sm text-indigo-400 flex items-center gap-2">
+                        <i class="fab fa-github"></i> Option 2: Host Directly on GitHub Pages
+                    </h4>
+                    <ol class="list-decimal list-inside space-y-1.5 text-slate-300">
+                        <li>In your GitHub repository settings, scroll down to the **Pages** section.</li>
+                        <li>Select the <code class="bg-slate-950 px-1.5 py-0.5 rounded text-slate-200">main</code> branch as source and click **Save**.</li>
+                        <li>Your site will be live at <code class="bg-slate-950 px-1.5 py-0.5 rounded text-indigo-300">username.github.io/unscroll-app</code>!</li>
+                    </ol>
+                </div>
+
+                <!-- Mobile PWA Installation -->
+                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                    <h4 class="font-extrabold text-slate-100 text-sm text-purple-400 flex items-center gap-2">
+                        <i class="fas fa-mobile-alt"></i> How Users Install It on Phone (No App Store Needed)
+                    </h4>
+                    <p class="text-slate-400">Once your link is live:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-300">
+                        <li><strong class="text-slate-100">iPhone (Safari):</strong> Open the link &rarr; Tap the **Share** button &rarr; Tap **"Add to Home Screen"**.</li>
+                        <li><strong class="text-slate-100">Android (Chrome):</strong> Open the link &rarr; Tap the **Three Dots** menu &rarr; Tap **"Install App"** or **"Add to Home Screen"**.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-2 text-right">
+                <button onclick="closePublishModal()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition">
+                    Got It!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-4 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>UnScroll App — Built for Mindful Focus & Digital Freedom</span>
+            <button onclick="openPublishModal()" class="text-emerald-400 hover:underline">Publish under your name ($0)</button>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        /* ==========================================
+           1. SIMULATOR STATE & LOGIC
+           ========================================== */
+        let scrollPos = 0;
+        let lastScrollTime = Date.now();
+        let scrollSpeed = 0;
+        let totalDistanceMeters = 0;
+        let mindfulBreaks = 0;
+        let sensitivity = 2; // 1: Low, 2: Med, 3: High
+        let frictionTriggered = false;
+
+        const feedContainer = document.getElementById('feedContainer');
+
+        const feedPosts = [
+            { author: "Mindful Living", tag: "Focus", content: "Did you know? Checking your phone immediately upon waking floods your brain with cortisol and early dopamine spikes." },
+            { author: "Deep Work Daily", tag: "Productivity", content: "The urge to scroll usually peaks for only 90 seconds. If you wait it out, your brain refocuses." },
+            { author: "Tech Balance", tag: "Wellbeing", content: "Endless feeds are designed without 'stopping cues'. Creating manual resistance is key to regaining control." },
+            { author: "Study Hacks", tag: "Learning", content: "Multitasking between social media and study reduces retention by up to 40%." },
+            { author: "Digital Minimalism", tag: "Habits", content: "Notice how your eyes feel right now. Take a deep breath and relax your jaw." }
+        ];
+
+        function initFeed() {
+            if (!feedContainer) return;
+            feedContainer.innerHTML = '';
+            for (let i = 0; i < 15; i++) {
+                const post = feedPosts[i % feedPosts.length];
+                const el = document.createElement('div');
+                el.className = "p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2";
+                el.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-200">${post.author}</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 text-[10px]">${post.tag}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${post.content}</p>
+                `;
+                feedContainer.appendChild(el);
+            }
+        }
+
+        function handleFeedScroll() {
+            if (frictionTriggered) return;
+
+            const now = Date.now();
+            const dt = (now - lastScrollTime) / 1000;
+            const currentPos = feedContainer.scrollTop;
+            const dy = Math.abs(currentPos - scrollPos);
+
+            if (dt > 0) {
+                scrollSpeed = Math.round(dy / dt);
+                totalDistanceMeters += Math.round(dy * 0.001);
+                
+                document.getElementById('scrollSpeedDisplay').innerText = `${scrollSpeed} px/s`;
+                document.getElementById('scrollDistance').innerText = `${totalDistanceMeters} m`;
+                
+                const speedBar = document.getElementById('scrollSpeedBar');
+                const barWidth = Math.min(100, (scrollSpeed / 1200) * 100);
+                speedBar.style.width = `${barWidth}%`;
+
+                // Threshold calculation based on sensitivity
+                const threshold = sensitivity === 1 ? 1200 : sensitivity === 2 ? 800 : 500;
+
+                if (scrollSpeed > threshold) {
+                    triggerFrictionModal();
+                }
+            }
+
+            scrollPos = currentPos;
+            lastScrollTime = now;
+        }
+
+        function triggerFrictionModal() {
+            frictionTriggered = true;
+            document.getElementById('frictionOverlay').classList.remove('hidden');
+            mindfulBreaks++;
+            document.getElementById('mindfulBreaksCount').innerText = mindfulBreaks;
+        }
+
+        function resumeScrolling() {
+            frictionTriggered = false;
+            document.getElementById('frictionOverlay').classList.add('hidden');
+            scrollSpeed = 0;
+            document.getElementById('scrollSpeedBar').style.width = '0%';
+        }
+
+        function resetSimulator() {
+            totalDistanceMeters = 0;
+            mindfulBreaks = 0;
+            document.getElementById('scrollDistance').innerText = '0 m';
+            document.getElementById('mindfulBreaksCount').innerText = '0';
+            resumeScrolling();
+        }
+
+        document.getElementById('sensitivitySlider')?.addEventListener('input', (e) => {
+            sensitivity = parseInt(e.target.value);
+            const labels = { 1: 'Low', 2: 'Medium', 3: 'High' };
+            document.getElementById('sensitivityVal').innerText = labels[sensitivity];
+        });
+
+
+        /* ==========================================
+           2. MIND-NOTES / JOURNALING STATE & LOGIC
+           ========================================== */
+        let notesData = JSON.parse(localStorage.getItem('unscroll_notes') || '[]');
+        let activeNoteId = null;
+        let activeTagFilter = 'ALL';
+
+        if (notesData.length === 0) {
+            notesData = [
+                {
+                    id: 'note_default_1',
+                    title: 'Why I want to stop scrolling',
+                    body: 'I want to regain my focus, spend more time learning valuable skills, and stop feeling mentally drained by endless social media feeds.',
+                    tags: ['#Reflection'],
+                    pinned: true,
+                    updatedAt: new Date().toISOString()
+                }
+            ];
+            localStorage.setItem('unscroll_notes', JSON.stringify(notesData));
+        }
+
+        function saveNotesToStorage() {
+            localStorage.setItem('unscroll_notes', JSON.stringify(notesData));
+        }
+
+        function renderNotesList() {
+            const container = document.getElementById('notesContainer');
+            if (!container) return;
+            
+            const searchVal = (document.getElementById('noteSearch')?.value || '').toLowerCase();
+            container.innerHTML = '';
+
+            let filtered = notesData.filter(n => {
+                const matchSearch = n.title.toLowerCase().includes(searchVal) || n.body.toLowerCase().includes(searchVal);
+                const matchTag = activeTagFilter === 'ALL' || n.tags.includes(activeTagFilter);
+                return matchSearch && matchTag;
+            });
+
+            filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">No notes found.</div>`;
+                return;
+            }
+
+            filtered.forEach(note => {
+                const el = document.createElement('div');
+                const isActive = note.id === activeNoteId;
+                el.className = `p-3 rounded-2xl border cursor-pointer transition flex flex-col gap-1 ${
+                    isActive ? 'bg-emerald-500/10 border-emerald-500/40' : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                }`;
+                el.onclick = () => selectNote(note.id);
+
+                const dateStr = new Date(note.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+                el.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-xs text-slate-200 truncate ${isActive ? 'text-emerald-400' : ''}">${note.title || 'Untitled Note'}</h4>
+                        ${note.pinned ? '<i class="fas fa-thumbtack text-[10px] text-amber-400"></i>' : ''}
+                    </div>
+                    <p class="text-[11px] text-slate-400 line-clamp-2">${note.body || 'Empty note...'}</p>
+                    <div class="flex items-center justify-between mt-1 text-[10px] text-slate-500">
+                        <span>${dateStr}</span>
+                        <div class="flex gap-1">
+                            ${note.tags.map(t => `<span class="text-indigo-400">${t}</span>`).join(' ')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function createNewNote() {
+            const newNote = {
+                id: 'note_' + Date.now(),
+                title: 'New Reflection',
+                body: '',
+                tags: ['#Reflection'],
+                pinned: false,
+                updatedAt: new Date().toISOString()
+            };
+            notesData.unshift(newNote);
+            saveNotesToStorage();
+            selectNote(newNote.id);
+        }
+
+        function selectNote(id) {
+            activeNoteId = id;
+            const note = notesData.find(n => n.id === id);
+            const noNoteView = document.getElementById('noNoteSelectedView');
+            
+            if (!note) {
+                if (noNoteView) noNoteView.classList.remove('hidden');
+                return;
+            }
+
+            if (noNoteView) noNoteView.classList.add('hidden');
+
+            document.getElementById('noteTitle').value = note.title;
+            document.getElementById('noteBody').value = note.body;
+            
+            const pinBtn = document.getElementById('pinNoteBtn');
+            if (note.pinned) pinBtn.classList.add('text-amber-400');
+            else pinBtn.classList.remove('text-amber-400');
+
+            renderNoteTags(note);
+            renderNotesList();
+        }
+
+        function renderNoteTags(note) {
+            const tagContainer = document.getElementById('activeNoteTags');
+            if (!tagContainer) return;
+            tagContainer.innerHTML = '';
+            note.tags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.className = "px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] flex items-center gap-1";
+                tagEl.innerHTML = `${tag} <button onclick="removeTag('${tag}')" class="hover:text-red-400">&times;</button>`;
+                tagContainer.appendChild(tagEl);
+            });
+        }
+
+        function autoSaveCurrentNote() {
+            if (!activeNoteId) return;
+            const note = notesData.find(n => n.id === activeNoteId);
+            if (!note) return;
+
+            note.title = document.getElementById('noteTitle').value;
+            note.body = document.getElementById('noteBody').value;
+            note.updatedAt = new Date().toISOString();
+
+            saveNotesToStorage();
+            renderNotesList();
+        }
+
+        function togglePinCurrentNote() {
+            if (!activeNoteId) return;
+            const note = notesData.find(n => n.id === activeNoteId);
+            if (note) {
+                note.pinned = !note.pinned;
+                saveNotesToStorage();
+                selectNote(note.id);
+            }
+        }
+
+        function deleteCurrentNote() {
+            if (!activeNoteId) return;
+            notesData = notesData.filter(n => n.id !== activeNoteId);
+            saveNotesToStorage();
+            activeNoteId = notesData.length > 0 ? notesData[0].id : null;
+            renderNotesList();
+            if (activeNoteId) selectNote(activeNoteId);
+            else document.getElementById('noNoteSelectedView').classList.remove('hidden');
+        }
+
+        function promptAddTag() {
+            if (!activeNoteId) return;
+            const tag = prompt("Enter hashtag (e.g. #Triggers):");
+            if (tag) {
+                const formatted = tag.startsWith('#') ? tag : '#' + tag;
+                const note = notesData.find(n => n.id === activeNoteId);
+                if (note && !note.tags.includes(formatted)) {
+                    note.tags.push(formatted);
+                    saveNotesToStorage();
+                    renderNoteTags(note);
+                    renderNotesList();
+                }
+            }
+        }
+
+        function removeTag(tagToRemove) {
+            if (!activeNoteId) return;
+            const note = notesData.find(n => n.id === activeNoteId);
+            if (note) {
+                note.tags = note.tags.filter(t => t !== tagToRemove);
+                saveNotesToStorage();
+                renderNoteTags(note);
+                renderNotesList();
+            }
+        }
+
+        function insertPrompt(text) {
+            const body = document.getElementById('noteBody');
+            body.value += (body.value ? '\n\n' : '') + text;
+            autoSaveCurrentNote();
+        }
+
+        function downloadCurrentNote() {
+            if (!activeNoteId) return;
+            const note = notesData.find(n => n.id === activeNoteId);
+            if (!note) return;
+
+            const textContent = `Title: ${note.title}\nDate: ${new Date(note.updatedAt).toLocaleString()}\nTags: ${note.tags.join(', ')}\n\n${note.body}`;
+            const blob = new Blob([textContent], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'note'}.txt`;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+        }
+
+        function filterNotesTag(tag) {
+            activeTagFilter = tag;
+            document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+                if (btn.innerText.includes(tag) || (tag === 'ALL' && btn.innerText === 'All')) {
+                    btn.className = "tag-filter-btn active px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap text-[11px] font-semibold";
+                } else {
+                    btn.className = "tag-filter-btn px-3 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 whitespace-nowrap text-[11px]";
+                }
+            });
+            renderNotesList();
+        }
+
+
+        /* ==========================================
+           3. CALENDAR & SCHEDULE LOGIC
+           ========================================== */
+        let currentDate = new Date();
+        let selectedDateStr = new Date().toISOString().split('T')[0];
+        let screenTimeGoal = parseInt(localStorage.getItem('unscroll_screen_goal') || '60');
+        let calendarBlocks = JSON.parse(localStorage.getItem('unscroll_calendar_blocks') || '{}');
+        let habitDateLogs = JSON.parse(localStorage.getItem('unscroll_habit_logs') || '{}');
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('calendarMonthYear').innerText = `${monthNames[month]} ${year}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            if (!calendarGrid) return;
+            calendarGrid.innerHTML = '';
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = "h-16 bg-slate-900/30 border border-slate-800/40 rounded-xl";
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                
+                const isSelected = dateKey === selectedDateStr;
+                const isToday = dateKey === todayStr;
+                const hasBlocks = calendarBlocks[dateKey] && calendarBlocks[dateKey].length > 0;
+
+                cell.className = `h-16 p-2 border rounded-xl cursor-pointer transition flex flex-col justify-between ${
+                    isSelected ? 'bg-emerald-500/15 border-emerald-500' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
+                }`;
+                cell.onclick = () => selectCalendarDate(dateKey);
+
+                cell.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold ${isToday ? 'bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded-md' : 'text-slate-300'}">${day}</span>
+                    </div>
+                    ${hasBlocks ? `<div class="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 rounded truncate border border-indigo-500/30">${calendarBlocks[dateKey].length} Focus Block</div>` : ''}
+                `;
+                calendarGrid.appendChild(cell);
+            }
+            updateCalendarStats();
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function resetToToday() {
+            currentDate = new Date();
+            selectedDateStr = currentDate.toISOString().split('T')[0];
+            renderCalendar();
+            selectCalendarDate(selectedDateStr);
+        }
+
+        function selectCalendarDate(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('selectedDateTitle').innerText = new Date(dateStr).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+            renderCalendar();
+            renderSelectedDateDetails();
+        }
+
+        function renderSelectedDateDetails() {
+            const blocksList = document.getElementById('scheduledBlocksList');
+            if (!blocksList) return;
+            blocksList.innerHTML = '';
+
+            const blocks = calendarBlocks[selectedDateStr] || [];
+
+            if (blocks.length === 0) {
+                blocksList.innerHTML = `<p class="text-xs text-slate-500 py-2">No focus blocks scheduled.</p>`;
+            } else {
+                blocks.forEach((block, index) => {
+                    const el = document.createElement('div');
+                    el.className = "p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between";
+                    el.innerHTML = `
+                        <div>
+                            <p class="text-xs font-semibold text-slate-200">${block.title}</p>
+                            <p class="text-[10px] text-slate-400"><i class="far fa-clock"></i> ${block.start} - ${block.end}</p>
+                        </div>
+                        <button onclick="removeFocusBlock(${index})" class="text-slate-500 hover:text-red-400 text-xs"><i class="fas fa-trash"></i></button>
+                    `;
+                    blocksList.appendChild(el);
+                });
+            }
+
+            const habitContainer = document.getElementById('selectedDateHabits');
+            if (!habitContainer) return;
+            habitContainer.innerHTML = '';
+            
+            const defaultHabits = ['No Phone First 30m', 'Read 20 Mins', 'Mindful Pause'];
+            const dateLoggedHabits = habitDateLogs[selectedDateStr] || [];
+
+            defaultHabits.forEach(h => {
+                const isDone = dateLoggedHabits.includes(h);
+                const el = document.createElement('div');
+                el.className = "flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800/60";
+                el.innerHTML = `
+                    <span class="text-xs text-slate-300">${h}</span>
+                    <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleHabitForDate('${h}')" class="accent-emerald-500 h-4 w-4 rounded cursor-pointer">
+                `;
+                habitContainer.appendChild(el);
+            });
+        }
+
+        function toggleAddBlockForm(show) {
+            const form = document.getElementById('addBlockForm');
+            if (form) {
+                if (show) form.classList.remove('hidden');
+                else form.classList.add('hidden');
+            }
+        }
+
+        function saveFocusBlock() {
+            const title = document.getElementById('blockTitleInput').value || 'Focus Block';
+            const start = document.getElementById('blockStartTime').value || '09:00';
+            const end = document.getElementById('blockEndTime').value || '10:00';
+
+            if (!calendarBlocks[selectedDateStr]) {
+                calendarBlocks[selectedDateStr] = [];
+            }
+
+            calendarBlocks[selectedDateStr].push({ title, start, end });
+            localStorage.setItem('unscroll_calendar_blocks', JSON.stringify(calendarBlocks));
+            
+            document.getElementById('blockTitleInput').value = '';
+            toggleAddBlockForm(false);
+            renderCalendar();
+            renderSelectedDateDetails();
+        }
+
+        function removeFocusBlock(index) {
+            if (calendarBlocks[selectedDateStr]) {
+                calendarBlocks[selectedDateStr].splice(index, 1);
+                localStorage.setItem('unscroll_calendar_blocks', JSON.stringify(calendarBlocks));
+                renderCalendar();
+                renderSelectedDateDetails();
+            }
+        }
+
+        function toggleHabitForDate(habitName) {
+            if (!habitDateLogs[selectedDateStr]) {
+                habitDateLogs[selectedDateStr] = [];
+            }
+            const idx = habitDateLogs[selectedDateStr].indexOf(habitName);
+            if (idx > -1) {
+                habitDateLogs[selectedDateStr].splice(idx, 1);
+            } else {
+                habitDateLogs[selectedDateStr].push(habitName);
+            }
+            localStorage.setItem('unscroll_habit_logs', JSON.stringify(habitDateLogs));
+            renderCalendar();
+        }
+
+        function setScreenTimeGoalPrompt() {
+            const val = prompt("Enter daily screen time goal in minutes:", screenTimeGoal);
+            if (val && !isNaN(val)) {
+                screenTimeGoal = parseInt(val);
+                localStorage.setItem('unscroll_screen_goal', screenTimeGoal);
+                updateCalendarStats();
+            }
+        }
+
+        function updateCalendarStats() {
+            const display = document.getElementById('screenTimeGoalDisplay');
+            if (display) display.innerText = `${screenTimeGoal}m`;
+        }
+
+
+        /* ==========================================
+           4. BREATHING TIMER LOGIC
+           ========================================== */
+        let breathingTimerInterval = null;
+        let breathingSecondsLeft = 60;
+
+        function startBreathingSession() {
+            if (breathingTimerInterval) clearInterval(breathingTimerInterval);
+            breathingSecondsLeft = 60;
+            
+            const timerEl = document.getElementById('breathingTimer');
+            const btn = document.getElementById('startBreathingBtn');
+            btn.innerText = "In Progress...";
+            btn.disabled = true;
+
+            breathingTimerInterval = setInterval(() => {
+                breathingSecondsLeft--;
+                const m = String(Math.floor(breathingSecondsLeft / 60)).padStart(2, '0');
+                const s = String(breathingSecondsLeft % 60).padStart(2, '0');
+                timerEl.innerText = `${m}:${s}`;
+
+                if (breathingSecondsLeft <= 0) {
+                    clearInterval(breathingTimerInterval);
+                    timerEl.innerText = "01:00";
+                    btn.innerText = "Start 1-Min Session";
+                    btn.disabled = false;
+                    alert("Mindful Pause Complete! Great job resetting your mind.");
+                }
+            }, 1000);
+        }
+
+
+        /* ==========================================
+           5. WEB AUDIO AMBIENT GENERATOR
+           ========================================== */
+        let audioCtx = null;
+        let activeSoundNode = null;
+        let activeSoundType = null;
+
+        function toggleAmbientSound(type) {
+            if (activeSoundType === type) {
+                stopAmbientSound();
+                return;
+            }
+
+            stopAmbientSound();
+
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            whiteNoise.loop = true;
+
+            const filter = audioCtx.createBiquadFilter();
+            
+            if (type === 'rain') {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+            } else if (type === 'ocean') {
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+            } else {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+            }
+
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+            whiteNoise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            whiteNoise.start();
+            activeSoundNode = whiteNoise;
+            activeSoundType = type;
+
+            document.getElementById(`btn-sound-${type}`).innerText = 'Stop';
+            document.getElementById(`btn-sound-${type}`).classList.add('bg-emerald-500', 'text-slate-950');
+        }
+
+        function stopAmbientSound() {
+            if (activeSoundNode) {
+                activeSoundNode.stop();
+                activeSoundNode = null;
+            }
+            if (activeSoundType) {
+                const btn = document.getElementById(`btn-sound-${activeSoundType}`);
+                if (btn) {
+                    btn.innerText = `Play ${activeSoundType.charAt(0).toUpperCase() + activeSoundType.slice(1)}`;
+                    btn.classList.remove('bg-emerald-500', 'text-slate-950');
+                }
+                activeSoundType = null;
+            }
+        }
+
+
+        /* ==========================================
+           6. GENERAL TAB & MODAL MANAGEMENT
+           ========================================== */
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:bg-slate-800/50 whitespace-nowrap";
+            });
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap";
+            }
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            if (activeView) {
+                activeView.classList.remove('hidden');
+            }
+
+            if (tabId === 'journal') {
+                renderNotesList();
+                if (activeNoteId) selectNote(activeNoteId);
+                else if (notesData.length > 0) selectNote(notesData[0].id);
+            } else if (tabId === 'calendar') {
+                renderCalendar();
+                selectCalendarDate(selectedDateStr);
+            }
+        }
+
+        function openPublishModal() {
+            document.getElementById('publishModal').classList.remove('hidden');
+        }
+
+        function closePublishModal() {
+            document.getElementById('publishModal').classList.add('hidden');
+        }
+
+        // Initialize Application on Window Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initFeed();
+            renderNotesList();
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>
